@@ -1,0 +1,36 @@
+<aura:component implements="forceCommunity:themeLayout" access="global">
+    <aura:attribute name="profileMenu" type="Aura.Component[]" required="false"/>
+    <aura:attribute name="navBar" type="Aura.Component[]" required="false"/>
+    <aura:attribute name="newHeader" type="Aura.Component[]" required="false"/>
+    <aura:attribute name="newSection" type="Aura.Component[]" required="false"/>
+
+    <div>
+        <br/>
+        <div class="profileMenu">
+            {!v.profileMenu}
+        </div>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        <!--
+        <div style="padding-left:9%">
+            <div class="logoContainer"></div>
+        </div>-->
+
+        <h1 style="font-size:22px; padding-left:10%; color:#982881; font-weight:bold;"> Experian Credentialing Application</h1>
+    </div>
+
+    <div class="navigation" style="text-align:left">
+        {!v.navBar}
+    </div>
+
+    <div class="mainContentArea">
+        <div class="headerImage"/>     
+        {!v.body}
+    </div>
+</aura:component>

@@ -1,0 +1,26 @@
+<aura:component controller="CSDA_ClientContactSummaryController" implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="curUser" type="User"/>
+
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+	<div>
+	    <lightning:card class="outside-section-border">
+	    	<aura:set attribute="title">
+	    		<lightning:icon iconName="standard:contact" size="large"/>
+	    		&nbsp;<ui:outputText class="nameHeader" value="{!v.curUser.Name}"/>
+	    	</aura:set>
+	    	<div class="slds-border_top" style="border-color: #632678;"/>
+
+	    	<br/>
+	    	<div class="slds-grid slds-wrap" style="padding-left:3%">
+	    		<div class="slds-col slds-size_1-of-1">
+			    	<ui:outputText class="header-label" value="Last Login Date" /> <br/>
+		            <ui:outputText value="{!v.curUser.LastLoginDate}" />
+		        </div>
+	        </div>
+
+
+	    </lightning:card>
+	</div>
+
+</aura:component>

@@ -1,0 +1,123 @@
+<aura:component controller="CSDA_DocsToSignController" implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="relationshipRecord" type="CSDA_Membership_Doc_Relationship__c"/>
+	<aura:attribute name="thisDocument" type="CSDA_Membership_Documents__c"/>
+	<aura:attribute name="curUser" type="User" />
+	<aura:attribute name="IPAddress" type="String" />
+	<aura:attribute name="curDateTime" type="String" />
+	<aura:attribute name="trueFalseString" type="String" />
+	<aura:attribute name="multiTrueFalseString" type="String" />
+	<aura:attribute name="thisMembership" type="Membership__c" />
+	<aura:attribute name="isAgent" type="Boolean" />
+	<aura:attribute name="curMemContact" type="Membership_Contacts__c"/>
+
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+	<lightning:spinner variant="brand" size="large" aura:id="mySpinner" class="slds-hide"/>
+
+	<div style="height: 100%;">
+        <section class="slds-modal slds-fade-in-open">
+            <div style="color: #632678" class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-modal__close" title="Close" 
+                            onclick="{!c.closeMe}">
+                        <lightning:icon class="white slds-icon_small" iconName="utility:close"/> 
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                        Contract Agreement
+                    </h2>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium" > 
+					By clicking the "I Agree" button, you acknowledge that you have read and accept the terms of this agreement and consent to this binding electronic transaction, and acknowledge and agree that you may receive related notices and other services electronically.  You further agree that your electronic signature is effective and you will not contest the legally binding nature, validity or enforceability of this agreement based on the fact that the terms were accepted electronically.  This agreement and any related transactions entered into electronically will be deemed to be “in writing” and to have been “signed” by you on behalf of the company named below with the same effect as a manual signature (and any electronic record of such agreement entered into online will be deemed to be “in writing.”)  You acknowledge that you have a printer or other device to print or save this agreement.    You are required to update your contact information when it changes by emailing us at billing.questions@experian.com or calling us at 800-831-5614. 
+					 
+					<br/><br/>
+					THIS AGREEMENT DOES NOT BECOME EFFECTIVE UNLESS AND UNTIL OUR NOTIFICATION TO YOU OF OUR ACCEPTANCE OF YOUR APPLICATION WHICH CONSTITUTES AN ENFORCEABLE AGREEMENT BASED ON THE TERMS SET FORTH HEREIN.
+					<br/><br/>
+		
+					<!-- Only show this if Agent has already signed-->
+					<aura:if isTrue="{!v.relationshipRecord.Agent_Signed__c == true}">
+						<h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+	                        Agent Signature
+	                    </h2>
+	                    <div class="slds-border_top"/>
+						<ui:outputText class="bold italic" value="Full Legal Name of Company:"/><br/>
+						<ui:outputText class="redFont" value="{!v.relationshipRecord.Agent_Company_Name__c}"/><br/>
+
+						<ui:outputText class="bold italic" value="Duly Authorized Representative:"/><br/>
+						<ui:outputText class="redFont" value="{!v.relationshipRecord.Agent_Name__c}"/><br/>
+
+						<ui:outputText class="bold italic" value="Address:"/><br/>
+						<ui:outputText class="redFont" value="{!v.relationshipRecord.Agent_Address__c}"/><br/>
+
+						<ui:outputText class="bold italic" value="Phone Number:"/><br/>
+						<ui:outputText class="redFont" value="{!v.relationshipRecord.Agent_Phone__c}"/><br/>
+
+						<ui:outputText class="bold italic" value="Title:"/><br/>
+						<ui:outputText class="redFont" value="Agent"/><br/>
+						
+						<ui:outputText class="bold italic" value="IP Address:"/><br/>
+						<ui:outputText class="redFont" value="{!v.IPAddress}"/><br/>
+
+						<ui:outputText class="bold italic" value="Application Date:"/><br/>
+						<ui:outputText class="redFont" value="{!v.curDateTime}"/><br/>
+						<br/>
+					</aura:if>
+
+					<h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                        Signature
+                    </h2>
+                    <div class="slds-border_top"/>
+					<ui:outputText class="bold italic" value="Full Legal Name of Company:"/><br/>
+					<aura:if isTrue="{!v.isAgent}">
+						<ui:outputText class="redFont" value="{!v.curMemContact.Third_Party_Account__c}"/><br/>
+						<aura:set attribute="else">
+							<ui:outputText class="redFont" value="{!v.curUser.Contact.Account.Name}"/><br/>
+						</aura:set>
+					</aura:if>					
+
+					<ui:outputText class="bold italic" value="Duly Authorized Representative:"/><br/>
+					<ui:outputText class="redFont" value="{!v.curMemContact.First_Name__c + ' ' + v.curMemContact.Last_Name__c}"/><br/>
+
+					<ui:outputText class="bold italic" value="Address:"/><br/>
+					<ui:outputText class="redFont" value="{!v.curMemContact.Address__c + ' ' + v.curMemContact.City__c + ' ' + v.curMemContact.State__c + ' ' + v.curMemContact.Zip__c}"/><br/>
+
+					<ui:outputText class="bold italic" value="Phone Number:"/><br/>
+					<ui:outputText class="redFont" value="{!v.curMemContact.Phone_Number__c}"/><br/>
+
+					<ui:outputText class="bold italic" value="Title:"/><br/>
+					<aura:if isTrue="{!v.isAgent}">
+						<ui:outputText class="redFont" value="Agent"/><br/>
+						<aura:set attribute="else">
+							<ui:outputText class="redFont" value="Contract Signer"/><br/>
+						</aura:set>
+					</aura:if>
+					
+					<ui:outputText class="bold italic" value="IP Address:"/><br/>
+					<ui:outputText class="redFont" value="{!v.IPAddress}"/><br/>
+
+					<ui:outputText class="bold italic" value="Application Date:"/><br/>
+					<ui:outputText class="redFont" value="{!v.curDateTime}"/><br/>
+
+					<br/>
+					Effective Date: Once the Agreement becomes effective as described in the paragraph preceding this signature block, the Effective Date of the Agreement shall be deemed the Application Date.
+                </div>
+                
+                <footer class="slds-modal__footer"> 
+                	<aura:if isTrue="{!v.isAgent}">
+                		<lightning:button class="experianViolet bold" type="submit" name="update" label="I Agree (Agent)" onclick="{!c.agentSignDocument}"/>
+                		<aura:set attribute="else">
+                			<lightning:button class="experianViolet bold" type="submit" name="update" label="I Agree (Contract Signer)" onclick="{!c.signDocument}"/>
+                		</aura:set>
+                	</aura:if>
+                    
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+
+
+	
+
+</aura:component>

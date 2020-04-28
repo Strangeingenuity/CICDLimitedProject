@@ -1,0 +1,639 @@
+<aura:component controller="CSDA_MembershipRequestFormCont" implements="forceCommunity:availableForAllPageTypes" access="global">
+    <aura:attribute name="recordId" type="String"/>
+    <aura:attribute name="thisMembership" type="Membership__c"/>
+    <aura:attribute name="curUserContact" type="Contact"/>
+    
+    <!-- Data -->
+    <aura:attribute name="membershipContacts" type="Membership_Contacts__c[]"/>
+    <aura:attribute name="originalMembershipContacts" type="Membership_Contacts__c[]"/>
+    <aura:attribute name="membershipAddresses" type="Membership_Address__c[]"/>
+    <aura:attribute name="originalMembershipAddresses" type="Membership_Address__c[]"/>
+    <aura:attribute name="supportingDocs" type="Membership_Document_Upload_Request__c[]"/>
+    <aura:attribute name="ThirdPartyRoleList" type="List"/>
+    <aura:attribute name="StaticDocList" type="Document[]"/>
+    
+    <!-- Perm Purpose Matching Record ID, this will be created when the membership request is created  so it can be queried in the init -->
+    <aura:attribute name="ppMatchingRec" type="Membership_Matching__c"/>
+    
+    <!-- Responsible for rendering different sections-->
+    <!--aura:attribute name="SQDSectionActive" type="Boolean"/-->
+    <aura:attribute name="showPPSection" type="Boolean" default="true"/>
+    <aura:attribute name="accountEdit" type="Boolean" default="false"/>
+    <aura:attribute name="addressEdit" type="Boolean" default="false"/>
+    <aura:attribute name="websiteEdit" type="Boolean" default="false"/>
+    
+    <!-- Reseller Questionnaire File ID -->
+    <aura:attribute name="questionnaireLink" type="String"/>
+    <aura:attribute name="uploadedQuestionnaire" type="String"/>
+    
+    <!-- Conf info ID -->
+    <!--<aura:attribute name="resellerConfInfoID" type="String"/>-->
+    <aura:attribute name="docConfInfoID" type="String"/>
+    
+    <!-- Indicator to track if contact/address list is expanded. Need this to make sure modal doesn't toggle if already expanded. -->
+    <aura:attribute name="contactListExpanded" type="Boolean" default="false"/>
+    <aura:attribute name="addressListExpanded" type="Boolean" default="false"/>
+    
+    <!-- Proximity attributes-->
+    <aura:attribute name="jscProximity" type="String"/>
+    <aura:attribute name="hdimProximity" type="String"/>
+    
+    <!-- Combobox Options-->
+    <aura:attribute name="EI3PAWhereIsApplicationOpts" Type="List" default="[
+                                                                            {'label': 'In-house', 'value':'In-house'},
+                                                                            {'label': '3rd Party', 'value':'3rd Party'},
+                                                                            {'label': 'Other, describe:', 'value':'Other, describe:'}
+                                                                            ]"/>
+    <aura:attribute name="EI3PAWhereIsThirdPartyOpts" Type="List" default="[
+                                                                           {'label': 'Agent', 'value':'Agent'},
+                                                                           {'label': 'Direct Client/End-User', 'value':'Direct Client/End-User'},
+                                                                           {'label': 'Other, describe:', 'value':'Other, describe:'}
+                                                                           ]"/>
+    
+    <!-- Handlers-->
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+    <aura:handler name="change" value="{!v.thisMembership.SQD_Active__c}" action="{!c.setupComboBoxOptions}"/>
+    
+    <aura:handler name="DeleteRowEvt" event="c:CSDA_DeleteDynamicRowEvent" action="{!c.removeRow}"/>
+    <aura:handler name="AddContactEvt" event="c:CSDA_AddRecordEvent" action="{!c.addContactFromEvt}"/>
+    <aura:handler name="AddAddressEvt" event="c:CSDA_AddRecordEvent" action="{!c.addAddressFromEvt}"/>
+    <aura:handler name="SubmitEvt" event="c:CSDA_SubmitEvent" action="{!c.submit}"/>
+    <aura:handler name="UploadedEvt" event="c:CSDA_UploadedEvent" action="{!c.rerenderPage}"/>
+    
+    <aura:registerEvent name="GetProximityAttributes" type="c:CSDA_SubmitEvent"/> 
+    
+    <lightning:spinner variant="brand" size="large" aura:id="mySpinner" class="slds-hide"/>
+    
+    <!-- Static Resource-->
+    <ltng:require scripts="{!$Resource.mempxe}" afterScriptsLoaded="{!c.mempxeInitialize}"/>
+    
+    <!-- Modal-->
+    <div aura:id="ModalDialogPlaceholder" />
+    
+    <!-- Form -->
+    <div class="slds-p-horizontal_large" style="padding-left:5%;padding-right:5%;">
+        <div>
+            <lightning:card class="opacity">
+                <aura:set attribute="title">
+                    <!--div class="top2">
+         <lightning:icon iconName="standard:groups" size="large"/>
+         &nbsp;<ui:outputText value="{!v.thisMembership.Name}"/>
+        </div>
+
+        <div class="centerDiv top2">
+         <lightning:icon iconName="standard:service_resource" size="large"/>
+         &nbsp;
+
+                   <aura:if isTrue="{!v.thisMembership.User_Entered_Account_Name__c == undefined}">
+                    <ui:outputText value="{!v.thisMembership.Account__r.Name}" />
+                    <aura:set attribute="else">
+                     <ui:outputText value="{!v.thisMembership.User_Entered_Account_Name__c}" />
+                    </aura:set>
+                   </aura:if>
+        </div-->
+                    <div class="">
+                        <ui:outputText value="Core Product" />&nbsp;:&nbsp;
+                        <ui:outputText value="{!v.thisMembership.Product_s_Requested__c}" />	
+                    </div>
+                </aura:set>
+                
+                <aura:set attribute="actions">
+                    <lightning:button class="experianDarkBlue bold" name="update" label="Save" onclick="{!c.save}"/>
+                    <lightning:button class="experianPurple bold" name="submit" label="Submit" onclick="{!c.openSubmitModal}"/>
+                </aura:set>
+                <div class="slds-border_top" style="border-color: #632678;"/>
+                
+                <p class="slds-p-horizontal_small">
+                    
+                    <!-- Field List Grid -->
+                    <div class="slds-page-header opacity" >
+                        <section class="slds-clearfix">
+                            <div class="slds-float--left ">
+                                <lightning:icon class="slds-hide" aura:id="mainSection" iconName="utility:add" size="x-small" alternativeText="Indicates add"/>
+                                <lightning:icon class="slds-show" aura:id="mainSection" iconName="utility:dash" size="x-small" alternativeText="Indicates dash"/>
+                            </div>
+                            <h1 id="mainSection" onclick="{!c.toggleSection}" class="slds-page-header__title slds-truncate slds-align-middle" style="font-size: 16px;cursor: pointer;">Credentialing Request Information</h1>
+                        </section> 
+                    </div>
+                    
+                    <div aura:id="mainSection" class="slds-show">
+                        <div class="slds-grid slds-wrap">
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-p-around_x-small">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <ui:outputText value="Business Name" class="header-label"/>&nbsp;:&nbsp;
+                                    <aura:if isTrue="{!v.accountEdit == false}">
+                                        <aura:if isTrue="{!v.thisMembership.User_Entered_Account_Name__c == undefined}">
+                                            <ui:outputText value="{!v.thisMembership.Account__r.Name}" />                      
+                                            <aura:set attribute="else">
+                                                <ui:outputText value="{!v.thisMembership.User_Entered_Account_Name__c}" />
+                                            </aura:set>
+                                        </aura:if>
+                                    </aura:if>
+                                    <aura:if isTrue="{!v.accountEdit == true}">
+                                        <ui:inputText value="{!v.thisMembership.User_Entered_Account_Name__c}" />
+                                    </aura:if>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2 header-label">
+                                    <ui:inputCheckbox class="myCheckbox" label="Edit Business Name" value="{!v.accountEdit}" /> 
+                                </div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_2-of-6">
+                                    <ui:outputText class="header-label" value="Assumed Business Name" />
+                                </div> 
+                                <div class="slds-col slds-size_4-of-6">
+                                    <ui:inputText value="{!v.thisMembership.Assumed_Name__c}" />
+                                </div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2"></div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_2-of-6">
+                                    <ui:outputText class="header-label" value="Estimated # of Credit Reports Accessed Monthly" /> 
+                                </div>
+                                <div class="slds-col slds-size_4-of-6">
+                                    <ui:inputNumber value="{!v.thisMembership.of_Credit_Reports__c}" />
+                                </div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_2-of-6"><ui:outputText class="header-label" value="Annual Revenue" /> </div>
+                                <div class="slds-col slds-size_4-of-6"><ui:inputNumber value="{!v.thisMembership.Annual_Revenue__c}" /></div>
+                            </div>
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-border_top"></div>
+                            
+                            <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                <ui:outputText value="Business Address" class="header-label"/>&nbsp;:&nbsp;
+                                <aura:if isTrue="{!v.addressEdit == false}">
+                                    <aura:if isTrue="{!v.thisMembership.User_Entered_Address__c == undefined}">
+                                        <ui:outputText value="{!v.thisMembership.Registered_Address__c}" />
+                                        <aura:set attribute="else">
+                                            <ui:outputText value="{!v.thisMembership.User_Entered_Address__c}" />
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if>
+                                <aura:if isTrue="{!v.addressEdit == true}">
+                                    <ui:inputText value="{!v.thisMembership.User_Entered_Address__c}" />
+                                </aura:if>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2 header-label slds-p-around_x-small">
+                                <ui:inputCheckbox class="myCheckbox" label="Edit Business Address" value="{!v.addressEdit}" /> 
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <ui:outputText class="header-label" value="Is the Billing Address the same as Business Address?" />
+                            </div>
+                            <div class="slds-col slds-grid slds-size_1-of-2">
+                                <lightning:combobox variant="label-hidden" aura:id="combobox" onchange="{!c.showAddressModal}"/>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-border_top"></div>
+                            
+                            <div class="slds-col slds-size_1-of-2 slds-p-around_x-small">
+                                <ui:outputText value="Business Website" class="header-label"/>&nbsp;:&nbsp;
+                                <aura:if isTrue="{!v.websiteEdit == false}">
+                                    <aura:if isTrue="{!v.thisMembership.User_Entered_Website__c == undefined}">
+                                        <ui:outputText value="{!v.thisMembership.Business_Website__c}" />
+                                        <aura:set attribute="else">
+                                            <ui:outputText value="{!v.thisMembership.User_Entered_Website__c}" />
+                                        </aura:set>
+                                    </aura:if>
+                                </aura:if>
+                                <aura:if isTrue="{!v.websiteEdit == true}">
+                                    <ui:inputText value="{!v.thisMembership.User_Entered_Website__c}" />
+                                </aura:if>
+                            </div>
+                            <div class="slds-col slds-size_1-of-2 slds-p-around_x-small header-label">
+                                <ui:inputCheckbox class="myCheckbox" label="Edit Business Website" value="{!v.websiteEdit}" /> 
+                            </div>
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <ui:outputText class="header-label" value="Are you the Head Designate?" />
+                            </div>
+                            <div class="slds-col slds-grid slds-size_1-of-2">
+                                <lightning:combobox variant="label-hidden" aura:id="combobox" name="Head Designate" onchange="{!c.showContactModal}"/>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_2-of-6"><ui:outputText class="header-label" value="Business Email Address" /></div>
+                                <div class="slds-col slds-size_4-of-6"><ui:inputText value="{!v.thisMembership.Business_Email_Address__c}" /></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_2-of-6"><ui:outputText class="header-label" value="Organization Static IP Address(es)" /></div>
+                                <div class="slds-col slds-size_4-of-6"><ui:inputText value="{!v.thisMembership.Organisation_Static_IP_Address_es__c}" /></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_2-of-6"><ui:outputText class="header-label" value="User ID - First Choice (minimum 6 characters)" /> </div>
+                                <div class="slds-col slds-size_4-of-6"><ui:inputText value="{!v.thisMembership.User_ID_First_Choice__c}" /></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small"/>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_2-of-6"><ui:outputText class="header-label" value="User ID - Second Choice (minimum 6 characters)" /> </div>
+                                <div class="slds-col slds-size_4-of-6"><ui:inputText value="{!v.thisMembership.User_ID_Second_Choice__c}" /></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-border_top"></div>   
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-p-around_x-small">
+                                <div class="slds-col slds-size_3-of-6"><ui:outputText class="header-label" value="Do you have an Investigation License?" /> </div>
+                                <div class="slds-col slds-size_3-of-6"><ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.Do_you_have_an_Investigation_License__c}" /></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-p-around_x-small">
+                                <div class="slds-col slds-size_3-of-6"><ui:outputText class="header-label" value="Is the Product going to be used at other location(s) or by affiliated entities?" /></div>
+                                <div class="slds-col slds-size_3-of-6"><ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.Multiple_Locations__c}" change="{!c.toggleAddressTable}" /></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-2 slds-p-around_x-small">
+                                <div class="slds-col slds-size_4-of-6"><ui:outputText class="header-label" value="Are you the Contract Signer?" /></div>
+                                <div class="slds-col slds-size_2-of-6"><lightning:combobox variant="label-hidden" aura:id="combobox" name="Contract signer" onchange="{!c.showContactModal}"/></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-p-around_x-small">
+                                <div class="slds-col slds-size_3-of-6"><ui:outputText class="header-label" value="Will you be accessing Information on behalf of any other entity?" /></div>
+                                <div class="slds-col slds-size_3-of-6"><ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.Accessing_on_behalf_of_another_User__c}" /></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-p-around_x-small">
+                                <div class="slds-col slds-size_3-of-6"><ui:outputText class="header-label" value="Will you be using a Third Party, Mail House, or Technology Partner?" /></div>
+                                <div class="slds-col slds-size_3-of-6"><ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.Third_Party_Involved__c}" change="{!c.showTPContactModal}"/></div>
+                            </div>
+                            
+                            <div class="slds-col slds-grid slds-size_1-of-1 slds-p-around_x-small">
+                                <div class="slds-col slds-size_3-of-6"><ui:outputText class="header-label" value="Will you be furnishing consumer credit data to Experian" /></div>
+                                <div class="slds-col slds-size_3-of-6"><ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.SQD_Active__c}"/></div>
+                            </div>
+                            
+                            <!--div class="slds-col slds-size_1-of-4">
+                 <ui:outputText class="header-label" value="Subsidiery Account Name" />&nbsp;:&nbsp;
+                    <ui:outputText value="{!v.thisMembership.Subsidiery_Account__r.Name}" />
+                    <br/><br/>
+                </div-->
+                            <!--div class="slds-col slds-size_1-of-4">
+                                <ui:outputText class="header-label" value="Type of Ownership" />&nbsp;:&nbsp;
+                                <ui:outputText value="{!v.thisMembership.Type_of_Ownership__c}" />
+                                <br/><br/>
+                            </div-->
+                            <!--div class="slds-col slds-size_1-of-4" >
+                                <aura:if isTrue="{!v.thisMembership.Multiple_Locations__c}">
+                                    <ui:outputText class="header-label" value="How Many other locations?"/>
+                                    <ui:inputNumber value="{!v.thisMembership.Num_Of_Other_Locations__c}"/>
+                                </aura:if>
+                            </div-->
+                            
+                            <!--aura:if isTrue="{!v.thisMembership.Active_PreQual_Contract__c || v.thisMembership.Active_PreScreen_Contract__c}">
+                                <div class="slds-col slds-size_1-of-4">
+                                    <ui:outputText class="header-label" value="Will you keep PreQual and PreScreen transactions separate?" />
+                                    <ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.Keep_PreQual_PreScreen_Separate__c}"/>
+                                </div>		
+                            </aura:if-->
+                            
+                        </div>
+                    </div>
+                    
+                    <!-- SQD SECTION-->
+                    <aura:if isTrue="{!v.thisMembership.SQD_Active__c == true}">
+                        <div class="slds-border_top" style="border-color: #632678;">
+                            <h1 class="slds-page-header__title slds-truncate slds-align-middle" style="font-size: 18px">SQD Section</h1>
+                        </div>
+                        
+                        <div class="slds-col slds-size_1-of-4">
+                            <ui:outputText class="header-label" value="Are you the Data Processing Contact?" />
+                            <lightning:combobox variant="label-hidden" aura:id="combobox" name="Data Processing" onchange="{!c.showContactModal}"/>
+                        </div>
+                        <div class="slds-col slds-size_1-of-4">
+                            <ui:outputText class="header-label" value="Are you the Credit Contact?" />
+                            <lightning:combobox variant="label-hidden" aura:id="combobox" name="Credit" onchange="{!c.showContactModal}"/>
+                        </div>
+                        <div class="slds-col slds-size_1-of-4">
+                            <ui:outputText class="header-label" value="Are you the Metric Report Contact?" />
+                            <lightning:combobox variant="label-hidden" aura:id="combobox" name="Metric Report" onchange="{!c.showContactModal}"/>
+                        </div>
+                        <div class="slds-col slds-size_1-of-4">
+                            <ui:outputText class="header-label" value="Will you be responsible for sending in the data file for your company?" />
+                            <lightning:combobox variant="label-hidden" aura:id="combobox" name="Responsible for sending data" onchange="{!c.showContactModal}"/>
+                        </div>
+                        <br/>
+                    </aura:if>
+                    
+                    <!-- EI3PA SECTION-->				    
+                    <aura:if isTrue="{!v.thisMembership.EI3PA_Approval_Required_Count__c > 0}">
+                        <div class="slds-border_top" style="border-color: #632678;">
+                            <div class="slds-page-header opacity" >
+                                <section class="slds-clearfix">
+                                    <div class="slds-float--left ">
+                                        <lightning:icon class="slds-show" aura:id="EI3PASection" iconName="utility:add" size="x-small" alternativeText="Indicates add"/>
+                                        <lightning:icon class="slds-hide" aura:id="EI3PASection" iconName="utility:dash" size="x-small" alternativeText="Indicates dash"/>
+                                    </div>
+                                    <h1 id="EI3PASection" onclick="{!c.toggleSection}" class="slds-page-header__title slds-truncate slds-align-middle" style="font-size: 16px;cursor: pointer;">EI3PA Section</h1>
+                                </section>
+                            </div>
+                            
+                            <div class="slds-hide" aura:id="EI3PASection">
+                                <!-- First Section-->
+                                <ui:outputText class="EI3PA-subsection-question bold" value="1. Is the agent going to access, process, or store Experian Consumer Information (FCRA/GLB Data)? (Check all that apply)"/>
+                                <br/><br/>
+                                
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_1-of-1 header-label">
+                                        <ui:inputCheckbox label="Accessing Experian Consumer Information" class="myCheckbox" value="{!v.thisMembership.EI3PA_Accessing_Experian_Info__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <div class="slds-col slds-size_1-of-1 header-label">
+                                        <ui:inputCheckbox label="In receipt of, storing or hosting Experian Consumer Information" class="myCheckbox" value="{!v.thisMembership.EI3PA_Receipt_Store_Host_Experian_Info__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <div class="slds-col slds-size_1-of-1 header-label">
+                                        <ui:inputCheckbox label="Takes possession of Experian Consumer Information directly from Experian’s, or Reseller’s online systems" class="myCheckbox" value="{!v.thisMembership.EI3PA_Take_Info_directly_or_reseller__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <div class="slds-col slds-size_1-of-1 header-label">
+                                        <ui:inputCheckbox label="Processing Experian Consumer Information" class="myCheckbox" value="{!v.thisMembership.EI3PA_Processing_Info__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <div class="slds-col slds-size_1-of-1 header-label">
+                                        <ui:inputCheckbox label="Allows access to Experian Consumer Information/credit report data" class="myCheckbox" value="{!v.thisMembership.EI3PA_Allow_access__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <div class="slds-col slds-size_1-of-1 header-label">
+                                        <ui:inputCheckbox label="Providing managed service responsibilities – administering platform processing Experian Consumer Information" class="myCheckbox" value="{!v.thisMembership.EI3PA_Providing_service_responsibility__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <div class="slds-col slds-size_1-of-1 header-label">					            	
+                                        <ui:inputCheckbox label="Advertising or promoting online connectivity to Experian Consumer Information through platforms designed to support web-based access to data by one or more direct clients." class="myCheckbox" value="{!v.thisMembership.EI3PA_Advertising__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <div class="slds-col slds-size_1-of-1 header-label">
+                                        <ui:inputCheckbox label="Other - please describe:" class="myCheckbox" value="{!v.thisMembership.EI3PA_Other_please_describe__c}"/>
+                                    </div>
+                                    <br/><br/>
+                                    
+                                    <aura:if isTrue="{!v.thisMembership.EI3PA_Other_please_describe__c}">
+                                        <div class="slds-col slds-size_1-of-1">
+                                            <ui:outputText class="header-label" value="Describe Other:" />
+                                            <ui:inputText value="{!v.thisMembership.EI3PA_Other_Agent_access_Experian_Info__c}"/>
+                                        </div>
+                                    </aura:if>
+                                    
+                                </div>
+                                <br/>
+                                
+                                <!-- Second Section-->
+                                <ui:outputText class="EI3PA-subsection-question bold" value="2. How is Experian Consumer Information (FCRA/GLB Data) accessed, processed, stored?"/>
+                                <br/><br/>
+                                
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <ui:outputText class="header-label" value="Is a 3rd party software used?" />
+                                        <ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.EI3PA_Is_3rd_party_software_used__c}"/>
+                                        
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <aura:if isTrue="{!v.thisMembership.EI3PA_Is_3rd_party_software_used__c}">
+                                            <ui:outputText class="header-label" value="If yes, 3rd party software is:" />
+                                            <ui:inputText value="{!v.thisMembership.EI3PA_3rd_party_software__c}"/>
+                                            <aura:set attribute="else">
+                                                <ui:outputText class="header-label" value="If no, Please indicate where the application/database is located:" />
+                                                <lightning:combobox variant="label-hidden" options="{!v.EI3PAWhereIsApplicationOpts}" value="{!v.thisMembership.EI3PA_Where_is_application_located__c}"/>
+                                            </aura:set>
+                                        </aura:if>
+                                    </div>
+                                    
+                                    <aura:if isTrue="{!v.thisMembership.EI3PA_Where_is_application_located__c == 'Other, describe:'}">
+                                        <div class="slds-col slds-size_1-of-1">
+                                            <ui:outputText class="header-label" value="Describe Other:" />
+                                            <ui:inputText value="{!v.thisMembership.EI3PA_Other_Where_is_application_located__c}"/>
+                                        </div>
+                                    </aura:if>
+                                    
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <ui:outputText class="header-label" value="Where is the 3rd party software/platform hosted?" />
+                                        <lightning:combobox variant="label-hidden" options="{!v.EI3PAWhereIsThirdPartyOpts}" value="{!v.thisMembership.EI3PA_Where_third_party_software_hosted__c}"/>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2"/>
+                                    
+                                    <aura:if isTrue="{!v.thisMembership.EI3PA_Where_third_party_software_hosted__c == 'Other, describe:'}">
+                                        <div class="slds-col slds-size_1-of-1">
+                                            <ui:outputText class="header-label" value="Describe Other:" />
+                                            <ui:inputText value="{!v.thisMembership.EI3PA_Other_Where_is_3rd_party_hosted__c}"/>
+                                        </div>
+                                    </aura:if>
+                                </div>
+                                <br/>
+                                
+                                <!-- Third Section-->
+                                <ui:outputText class="EI3PA-subsection-question bold" value="3. Is the agent a sister company, or within same corporate umbrella, as the end-user?"/>
+                                <br/><br/>
+                                
+                                <div class="slds-grid slds-wrap">
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <ui:outputText class="header-label" value="Is the agent a sister company, or within same corporate umbrella, as the end-user?" />
+                                        <ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.EI3PA_Is_agent_a_sister_company__c}"/>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <aura:if isTrue="{!v.thisMembership.EI3PA_Is_agent_a_sister_company__c}">
+                                            <ui:outputText class="header-label" value="If yes, please outline relationship." />
+                                            <ui:inputText value="{!v.thisMembership.EI3PA_Outline_Relationship__c}"/>
+                                        </aura:if>
+                                    </div>
+                                    
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <ui:outputText class="header-label" value="Is the agent currently servicing other Experian clients?" />
+                                        <ui:inputCheckbox label="Yes" class="myCheckbox" value="{!v.thisMembership.EI3PA_Servicing_other_experian_clients__c}"/>
+                                    </div>
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <aura:if isTrue="{!v.thisMembership.EI3PA_Servicing_other_experian_clients__c}">
+                                            <ui:outputText class="header-label" value="If yes, please describe relationships and clients." />
+                                            <ui:inputText value="{!v.thisMembership.EI3PA_Describe_relationship_and_clients__c}"/>
+                                        </aura:if>
+                                    </div>
+                                </div>
+                                <br/>
+                                
+                                <!-- Fourth Section-->
+                                <ui:outputText class="EI3PA-subsection-question bold" value="4. Please outline the flow for Experian information from the time it leaves Experian until final consumption by the end-user. (Note: please include the following elements in your description: all upstream or downstream entities between Experian and end-user, including their roles)."/>
+                                <br/><br/>
+                                <ui:inputTextArea value="{!v.thisMembership.EI3PA_Outline_flow__c}"/>
+                                <br/>
+                                
+                            </div>
+                        </div>
+                    </aura:if>
+                    
+                    <!-- Permissible Purpose -->
+                    <aura:if isTrue="{!v.showPPSection}">
+                        <div class="slds-border_top" style="border-color: #632678;">
+                            <div class="slds-page-header opacity">
+                                <section class="slds-clearfix">
+                                    <div class="slds-float--left ">
+                                        <lightning:icon class="slds-show" aura:id="purposeSection" iconName="utility:add" size="x-small" alternativeText="Indicates add"/>
+                                        <lightning:icon class="slds-hide" aura:id="purposeSection" iconName="utility:dash" size="x-small" alternativeText="Indicates dash"/>
+                                    </div>
+                                    <h1 id="purposeSection" onclick="{!c.toggleSection}" class="slds-page-header__title slds-truncate slds-align-middle" style="font-size: 16px;cursor: pointer;">Permissible Purpose</h1>
+                                </section> 
+                            </div>
+                            
+                            <div class="slds-hide" aura:id="purposeSection">
+                                <div class="slds-col slds-size_1-of-1">
+                                    <ui:outputText class="header-label" value="Permissible Purpose" />
+                                    
+                                    <lightning:dualListbox class="myDualListBox"
+                                                           variant="label-hidden"
+                                                           sourceLabel="Available" 
+                                                           selectedLabel="Selected"
+                                                           aura:id="permPurposeList"
+                                                           onchange="{!c.permPurposeChanged}"/>
+                                    
+                                </div>
+                                
+                                <div class="slds-col slds-size_1-of-1">
+                                    <ui:outputText class="header-label" value="Other Reason" />
+                                    <ui:inputTextArea value="{!v.thisMembership.Other_Permissible_Reason__c}"/>
+                                </div>
+                                <br/>
+                            </div>
+                        </div>
+                    </aura:if>
+                    
+                    <!-- Membership CONTACT-->
+                    <div class="slds-border_top" style="border-color: #632678;">
+                        <div class="slds-page-header opacity" >
+                            <section class="slds-clearfix">
+                                <div class="slds-float--left ">
+                                    <lightning:icon class="slds-show" aura:id="contactSection" iconName="utility:add" size="x-small" alternativeText="Indicates add"/>
+                                    <lightning:icon class="slds-hide" aura:id="contactSection" iconName="utility:dash" size="x-small" alternativeText="Indicates dash"/>
+                                </div>
+                                <h1 id="contactSection" onclick="{!c.toggleSection}" class="slds-page-header__title slds-truncate slds-align-middle" style="font-size: 16px;cursor: pointer;">Credentialing Contacts</h1>
+                                <div class="slds-hide" style="float:right" aura:id="contactSection">
+                                    <lightning:button class="experianPurple bold" label="Add Contact" onclick="{!c.AddContactRow}"/>
+                                </div>
+                            </section>
+                        </div>
+                        
+                        <div class="slds-hide" aura:id="contactSection">
+                            <table class="slds-table slds-table--bordered slds-table--cell-buffer table-border" style="table-layout: auto;">
+                                <thead>
+                                    <tr class="slds-line-height--reset">
+                                        <th class="table-row-content experianDarkBlue" scope="col">First Name</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Last Name</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col" style="width:180px">Role</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Email</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Phone</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Street</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">City</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">State</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Zip</th>
+                                        <th class="table-row-content experianDarkBlue" style="width:100px" scope="col">Is Third Party?</th>
+                                        <th class="table-row-content experianDarkBlue" style="width:20px" scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Display existing membership contacts-->
+                                    <!-- Allow dynamic creation of new contacts-->
+                                    <aura:iteration items="{!v.membershipContacts}" var="item" indexVar="index">
+                                        <c:CSDA_MembershipContactRow record="{!item}" rowIndex="{!index}" SQDSectionActive="{!v.thisMembership.SQD_Active__c}" ThirdPartyRoleList="{!v.ThirdPartyRoleList}" />  
+                                    </aura:iteration>
+                                </tbody>
+                            </table>
+                            <br/>
+                        </div>
+                    </div>
+                    
+                    <!-- Membership ADDRESS-->
+                    <div class="slds-border_top" style="border-color: #632678;">
+                        <div class="slds-page-header opacity">
+                            <section class="slds-clearfix">
+                                <div class="slds-float--left ">
+                                    <lightning:icon class="slds-show" aura:id="addressSection" iconName="utility:add" size="x-small" alternativeText="Indicates add"/>
+                                    <lightning:icon class="slds-hide" aura:id="addressSection" iconName="utility:dash" size="x-small" alternativeText="Indicates dash"/>
+                                </div>
+                                <h1 id="addressSection" onclick="{!c.toggleSection}" class="slds-page-header__title slds-truncate slds-align-middle" style="cursor: pointer;font-size: 16px">Credentialing Addresses</h1>
+                                
+                                <div class="slds-hide" style="float:right" aura:id="addressSection">
+                                    <lightning:button class="slds-m-top_small experianPurple" label="Add Address" onclick="{!c.AddAddressRow}"/>
+                                </div>
+                                
+                            </section>
+                        </div>
+                        <div class="slds-hide" aura:id="addressSection">
+                            <table class="slds-table slds-table--bordered slds-table--cell-buffer table-border" style="table-layout: auto;">
+                                <thead>
+                                    <tr class="slds-line-height--reset" >
+                                        <th class="table-row-content experianDarkBlue" scope="col">Account Name</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Address Line 1</th>
+                                        <!--
+                      <th class="table-row-content experianDarkBlue" scope="col">Address Line 2</th>-->
+                                        <th class="table-row-content experianDarkBlue" scope="col">City</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Phone Number</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">State</th>
+                                        <th class="table-row-content experianDarkBlue" scope="col">Zip</th>
+                                        <!--<th class="table-row-content experianDarkBlue" style="width:70px" scope="col">Billing</th>-->
+                                        <th class="table-row-content experianDarkBlue" scope="col">Type</th>
+                                        <th class="table-row-content experianDarkBlue" style="width:20px" scope="col"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Display existing membership addresses-->
+                                    <!-- Allow dynamic creation of new addresses-->
+                                    <aura:iteration items="{!v.membershipAddresses}" var="item" indexVar="index">
+                                        <c:CSDA_MembershipAddressRow record="{!item}" rowIndex="{!index}"/>  
+                                    </aura:iteration>  
+                                </tbody>
+                            </table>
+                            <br/>
+                        </div>
+                    </div>
+                    
+                    <!-- Questionnnaire -->
+                    <aura:if isTrue="{!v.thisMembership.Reseller__c}">
+                        <div class="slds-border_top" style="border-color: #632678;"/>
+                        
+                        <div class="slds-page-header opacity" >
+                            <section class="slds-clearfix">
+                                <div class="slds-float--left ">
+                                    <lightning:icon class="slds-show" aura:id="resellerSection" iconName="utility:add" size="x-small" alternativeText="Indicates add"/>
+                                    <lightning:icon class="slds-hide" aura:id="resellerSection" iconName="utility:dash" size="x-small" alternativeText="Indicates dash"/>
+                                </div>
+                                <h1 id="resellerSection" onclick="{!c.toggleSection}" class="slds-page-header__title slds-truncate slds-align-middle" style="font-size: 16px;cursor: pointer;">Reseller Questionnaire</h1>
+                            </section> 
+                        </div>
+                        
+                        <div aura:id="resellerSection" class="slds-hide">
+                            <div class="slds-grid slds-wrap">
+                                <div class="slds-col slds-size_1-of-2">
+                                    <ui:outputText value="Download Questionnaire Form"/><br/><br/>
+                                    <a class="button experianViolet" href="{!v.questionnaireLink}" target="_blank">Download Form</a><br/>
+                                    <!--<a class="button experianDarkBlue" href="/sfc/servlet.shepherd/document/download/069290000003UbTAAU">Download</a><br/>-->
+                                    <!-- Display downloadable link if already uploaded-->
+                                    
+                                    <aura:if isTrue="{!v.uploadedQuestionnaire != null}">
+                                        <ui:outputText value="Uploaded Questionnaire"/><br/><br/>
+                                        <a class="button experianDarkBlue" href="{!v.uploadedQuestionnaire.Id}" target="_blank">Uploaded Form</a><br/>
+                                    </aura:if>
+                                </div>
+                                <div class="slds-col slds-size_1-of-2">
+                                    <ui:outputText value="Questionnaire File Upload"/>
+                                    <!--<c:CSDA_FileUploader parentId="{!v.docConfInfoID}" fileNameOverride="Reseller Questionnaire" />-->
+                                    <lightning:fileUpload name="Upload Questionnaire" multiple="false" recordId="{!v.docConfInfoID}" onuploadfinished="{!c.handleUploadFinished}" />
+                                </div>
+                            </div>
+                        </div>
+                    </aura:if>
+                </p>
+            </lightning:card>
+        </div>
+    </div>
+    
+</aura:component>

@@ -1,0 +1,20 @@
+<aura:component implements="forceCommunity:layout" description="Custom Content Layout" access="global">
+    <aura:attribute name="column1" type="Aura.Component[]" required="false"></aura:attribute>
+    <aura:attribute name="column2" type="Aura.Component[]" required="false"></aura:attribute>
+
+    <div style="padding-left:1%; padding-right:1%;">
+	    <!--div class="left"-->
+	    <div>
+	        {!v.column1}
+	    </div>
+	    <!-- This is where we used to plug in CSDA_ClientContactSummaryController-->
+	    <!--
+	    <div class="right">
+	    	<br/>
+	    	<br/>
+	        {!v.column2}
+	    </div>
+	-->
+	</div>
+       
+</aura:component>

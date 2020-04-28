@@ -1,0 +1,67 @@
+<!--
+/**=====================================================================
+ * Appirio, Inc
+ * Name: AccountCNPJSearchPage.page
+ * Description: 
+ * Created Date: Jul 23rd, 2015
+ * Created By: Arpita Bose (Appirio)
+ * 
+ * Date Modified      Modified By                  Description of the update
+ * Aug 03rd, 2015     Arpita Bose                  T-421509: updated to include Edit link and some other updates
+ * Aug 17th, 2015     Arpita Bose                  I-176317 
+ * Sep 15th, 2015     Arpita Bose                  I-176674: Updated to show or disable Create button  
+ * Oct 29th, 2015     Paul Kissick                 Case 01209492: Changes for Mainframe Integration
+ * May 30th, 2017     Ryan (Weijie) Hu             I1106, I1095, I1096, I1060 (Experian Serasa Project) fix applied
+*  =====================================================================*/
+-->
+<apex:page standardController="Account" title="{!$Label.CNPJ_Title}" extensions="AccountCNPJSearchController">
+  <apex:form >
+  <apex:outputPanel id="wholePage">
+    <apex:pageBlock title="{!$Label.Title_Account_Search}">
+      <h2 class="maintitle">{!$Label.Search_CNPJNumber} &nbsp;&nbsp;</h2>
+      <apex:inputText id="searchBox" value="{!cnpjNum}" maxlength="14" disabled="{!isEdit}" />
+      <apex:commandButton id="submit" value="{!$Label.CNPJ_Button_Search}" action="{!searchAccounts}"/>
+      <apex:commandButton id="clear" value="{!$Label.CNPJ_Button_Clear}" action="{!resetResults}"/>  
+    </apex:pageBlock>
+    <apex:pagemessages />
+    <apex:pageBlock title="{!$Label.Title_Search_Results}" rendered="{!shouldDisplay == true}">
+      <apex:pageBlockButtons >
+        <apex:commandButton value="{!$Label.CNPJ_Button_Create}" disabled="{!IF(AND(isMainframe,shouldDisplay), true, IF(searchResults.size >= 0, true, false))}" action="{!processButtonClick}" id="createContact1" onclick="setTimeout('document.getElementById(\''+this.id+'\').className=\'btnDisabled\';', 1);  setTimeout('document.getElementById(\''+this.id+'\').disabled=true;', 50);">
+          <apex:param name="cnpjNum" value="{!acc.CNPJ_Number__c}" assignTo="{!cnpjNum}"/>
+        </apex:commandButton>
+      </apex:pageBlockButtons>
+      <apex:pageBlockTable value="{!searchResults}" var="acc" rendered="{!IF(searchResults.size > 0, true, false)}">
+        <apex:column >
+           <apex:outputLink title="" value="/{!acc.id}" target="_blank" style="font-weight:bold">{!$Label.CNPJ_Link_View}</apex:outputLink>&nbsp;|&nbsp;
+           <apex:outputLink title="" value="/{!acc.id}/e?retURL=/apex/AccountCNPJSearchPage" target="_self" disabled="{!IF(!mapAccIdToShowEdit[acc.Id], true, false)}" style="{!IF(!mapAccIdToShowEdit[acc.Id], 'color:#BBB6B6;', 'color:none; font-weight:bold')}">{!$Label.CNPJ_Link_Edit}</apex:outputLink>     
+        </apex:column>
+        <apex:column headerValue="{!$ObjectType.Account.fields.Name.label}" value="{!acc.Name}" />  
+        <apex:column headerValue="{!$ObjectType.Account.fields.CNPJ_Number__c.label}" value="{!acc.CNPJ_Number__c}" />
+        <apex:column headerValue="{!$ObjectType.Account.fields.Account_Type__c.label}" value="{!acc.Account_Type__c}" /> 
+        <apex:column headervalue="{!$Label.CNPJ_Header_Address}">
+          <apex:outputField value="{!acc.BillingStreet}" />, &nbsp;
+          <apex:outputField value="{!acc.BillingCity}" />, &nbsp;
+          <apex:outputField value="{!acc.BillingState}" />, &nbsp;
+          <apex:outputField value="{!acc.BillingCountry}" />, &nbsp;
+          <apex:outputField value="{!acc.BillingPostalCode}" />
+        </apex:column>  
+      </apex:pageBlockTable>
+      <apex:outputText value="{!$Label.Text_No_Records}" rendered="{!IF(searchResults.size == 0, true, false)}"/>
+    </apex:pageBlock>
+    <apex:pageBlock title="{!$Label.Mainframe_Search_Results}" rendered="{!isMainframe}">
+      <apex:pageBlockTable value="{!serviceResults.cnpjResults}" var="res" rendered="{!IF(serviceResults.cnpjResults.size > 0, true, false)}"> 
+        <apex:column width="20%" headerValue="" > 
+          <apex:commandButton rerender="wholePage" status="savingRecord" action="{!createFromServiceClick}" value="{!$Label.Account_CNPJ_Search_Save_From_Mainframe}" rendered="{!res.CNPJStatus == 'Active' || allowInactiveFromMainFram}" onclick="setTimeout('document.getElementById(\''+this.id+'\').className=\'btnDisabled\';', 1);  setTimeout('document.getElementById(\''+this.id+'\').disabled=true;', 50);" />
+          <apex:actionStatus id="savingRecord">
+            <apex:facet name="start"><img align="bottom" src="/img/loading.gif" /></apex:facet>
+          </apex:actionStatus>
+        </apex:column>
+        <apex:column width="40%" headerValue="{!$ObjectType.Account.fields.Name.label}">{!res.AccountName}</apex:column> 
+        <apex:column width="20%" headerValue="{!$ObjectType.Account.fields.CNPJ_Number__c.label}" value="{!res.CNPJNumber}" />
+        <apex:column width="20%" headerValue="CNPJ Status" value="{!res.CNPJStatus}" />
+      </apex:pageBlockTable>
+      <apex:outputText value="{!$Label.Text_No_Records}" rendered="{!IF(serviceResults.cnpjResults.size == 0, true, false)}"/>
+    </apex:pageBlock>
+    </apex:outputPanel>
+  </apex:form>
+</apex:page>

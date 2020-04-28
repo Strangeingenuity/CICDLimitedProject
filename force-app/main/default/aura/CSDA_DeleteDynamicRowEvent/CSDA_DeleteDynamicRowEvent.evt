@@ -1,0 +1,4 @@
+<aura:event type="COMPONENT" description="Event to remove Row" >
+    <aura:attribute name="indexVar" type="Integer" description="Use For Delete Row" />
+    <aura:attribute name="objectType" type="String" description="Determine which table to delete from" />
+</aura:event>

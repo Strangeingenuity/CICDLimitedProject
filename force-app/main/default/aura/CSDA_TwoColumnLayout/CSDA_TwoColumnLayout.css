@@ -1,0 +1,8 @@
+.THIS .left {
+    float: left;
+    width: 78%;
+}
+.THIS .right {
+    float: right;
+    width: 20%;
+}

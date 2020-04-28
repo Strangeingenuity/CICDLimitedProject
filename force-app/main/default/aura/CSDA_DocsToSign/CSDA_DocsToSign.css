@@ -1,0 +1,60 @@
+.THIS .bgOpacity{
+	background-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.THIS .contractText{
+	font-size:10pt;
+	font-weight:bold;
+	font-style:italic;
+	padding-left:3%;
+	padding-right:3%;
+}
+
+.THIS .contractHeaderText{
+	font-size:18pt;
+	font-weight:bold;
+}
+
+.THIS .contractSubHeaderText{
+	font-size:13pt;
+	font-weight:bold;
+}
+
+.THIS .contractAgreeText{
+	font-size:10pt;
+}
+
+.THIS .experianPurple{
+	background-color: #982881 !important;
+	color: #fff !important;
+}
+
+.THIS .experianLightBlue {
+	background-color: #406eb3 !important;
+	color: #fff !important;
+}
+
+.THIS .experianDarkBlue {
+	background-color: #26478d !important;
+	border-color: #1e315a !important;
+	color: #fff !important;
+}
+
+.THIS .experianViolet {
+	background-color: #632678 !important;
+	color: #fff !important;
+}
+
+.THIS .center {
+	margin: auto;
+    width: 15%;
+}
+
+.THIS .button {
+	border-radius: 12px;
+	padding: 10px 10px;
+	display: block;
+	border: 1px solid black;
+	width: auto;
+	height: auto;
+}

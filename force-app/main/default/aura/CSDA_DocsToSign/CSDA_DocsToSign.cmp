@@ -1,0 +1,132 @@
+<aura:component controller="CSDA_DocsToSignController" implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="docID" type="String" /> <!-- This exists so MembershipDocumentPage can easily pass this from VF-->
+	
+	<!--Queried attributes-->
+	<aura:attribute name="thisDocument" type="CSDA_Membership_Documents__c"/>
+	<aura:attribute name="curUser" type="User"/>
+	<aura:attribute name="downloadURL" type="String"/>
+	<aura:attribute name="downloadUnsignedDocLink" type="String"/> 
+	<aura:attribute name="agentContact" type="Membership_Contacts__c"/>
+
+	<!-- Passed in -->
+	<aura:attribute name="relationshipRecord" type="CSDA_Membership_Doc_Relationship__c"/>
+	<aura:attribute name="thisMembership" type="Membership__c"/>
+	<aura:attribute name="previewMode" type="Boolean" default="false"/>
+
+	<!-- These needs to be updated from child components-->
+	<!--aura:attribute name="numOfCheckboxes" type="Integer" default="0"/-->
+	<aura:attribute name="numOfCheckboxGroups" type="Integer" default="0"/>
+	<aura:attribute name="parsedContentArray" type="object[]"/>
+	<aura:attribute name="trueFalseArray" type="String[]" default="[]"/>
+	<aura:attribute name="multiTrueFalseArray" type="String[]"/>
+
+	<aura:attribute name="modifiedHeader" type="String" />
+	<aura:attribute name="modifiedName" type="String" />
+
+	<aura:attribute name="isAffiliateAddendum" type="Boolean" Default="false"/>
+	<aura:attribute name="affiliateAddressList" type="Membership_Address__c[]"/>
+
+	<!-- Handlers-->
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+	<!-- Modal-->
+	<div aura:id="ModalDialogPlaceholder" />
+
+	<div class="slds-p-horizontal_large" style="padding-left:5%;padding-right:5%;">
+		<!-- Affiliate Membership ADDRESS ONLY SHOW FOR AFFILIATE ADDENDUM-->
+		<aura:if isTrue="{!v.isAffiliateAddendum}">
+			<div class="slds-border_top" style="border-color: #632678;">
+	        	<div class="slds-page-header opacity" >
+	  				<section class="slds-clearfix">
+	        			<h1 id="addressSection" onclick="{!c.toggleSection}" class="slds-page-header__title slds-truncate slds-align-middle" style="font-size: 16px;cursor: pointer;">Affiliate Addresses</h1>
+	        		</section>
+	        	</div>
+
+	        	<div class="slds-show" aura:id="addressSection">
+	            	<table class="slds-table slds-table--bordered slds-table--cell-buffer table-border tableOpacity" style="table-layout: auto;">
+	            		<thead>
+				            <tr class="slds-line-height--reset">
+				            	<th class="table-row-content experianDarkBlue" scope="col">Account Name</th>
+				                <th class="table-row-content experianDarkBlue" scope="col">Address Line 1</th>
+				                <th class="table-row-content experianDarkBlue" scope="col">City</th>
+				                <th class="table-row-content experianDarkBlue" scope="col">Phone Number</th>
+				                <th class="table-row-content experianDarkBlue" scope="col">State</th>
+				                <th class="table-row-content experianDarkBlue" scope="col">Zip</th>
+				                <th class="table-row-content experianDarkBlue" scope="col">Type</th>
+				                <th class="table-row-content experianDarkBlue" style="width:20px" scope="col"></th>
+				            </tr>
+				        </thead>
+				        <tbody>
+					        <!-- Display existing membership addresses-->
+					        <aura:iteration items="{!v.affiliateAddressList}" var="item">
+				                <tr>
+				                	<td><ui:outputText value="{!item.Account_Name__c}"/></td>
+							  		<td><ui:outputText value="{!item.Address_Line_1__c}"/></td>
+							  		<td><ui:outputText value="{!item.City__c}"/></td>
+							  		<td><ui:outputText value="{!item.Phone_Number__c}"/></td>
+							  		<td><ui:outputText value="{!item.State__c}"/></td>
+							  		<td><ui:outputText value="{!item.Zip__c}"/></td>
+							  		<td><ui:outputText value="{!item.Type__c}"/></td>
+								</tr>
+				            </aura:iteration>
+					    </tbody>
+				    </table>
+				</div>
+	        </div>
+	        <br/><br/>
+		</aura:if>
+        
+		<!-- Don't show buttons in preview mode-->
+		<aura:if isTrue="{!v.previewMode == false}">
+			<div style="float:right; font-size:12pt; padding-top:1%">
+				<a class="button experianDarkBlue" href="{!v.downloadUnsignedDocLink}" target="_blank">Download Unsigned Document</a>
+				<aura:if isTrue="{!v.relationshipRecord.Signed__c == true}">
+					<a class="button experianViolet" href="{!v.downloadURL}" target="_blank">Download Signed Document</a>
+				</aura:if>
+			</div>
+		</aura:if>
+
+		<div class="bgOpacity" style="padding-bottom:2%; padding-top:2%">
+			<div class="contractHeaderText">
+				&nbsp;<lightning:icon iconName="standard:contract" size="large"/>
+				&nbsp;<ui:outputText value="{!v.modifiedName}"/><br/>
+				<ui:outputText class="contractSubHeaderText" value="{!v.modifiedHeader}"/>
+			</div>
+	
+			<br/>
+		    <div class="slds-border_top" style="border-color: #632678;"/>
+		    <br/>
+	
+			<div class="contractText">
+				<!-- This is where I can loop through contentArray and render child contentrenderhelper-->
+				<aura:iteration items="{!v.parsedContentArray}" var="item">
+					<c:CSDA_DocContentRenderHelper contentToRender="{!item}" trueFalseArray="{!v.trueFalseArray}" multiTrueFalseArray="{!v.multiTrueFalseArray}"/>
+				</aura:iteration>
+		    </div>
+
+		    <br/>
+
+		    <div class="contractText">
+		    	<ui:outputRichText value="{!v.thisDocument.Document_Footer__c}"/>
+		    </div>
+
+		    <!-- Only show this for the agent that is assigned -->
+		    <aura:if isTrue="{!and(and(v.relationshipRecord.Agent_Signed__c == false, v.previewMode == false), v.curUser.Contact.Id == v.relationshipRecord.Contact__c)}">
+	    		<div class="center">
+				    <lightning:button class="experianViolet bold" name="Sign" label="Click to Agree (Agent)" onclick="{!c.showAgreementModalForAgent}"/>
+				</div>
+		    </aura:if>
+
+		    <!-- If it is addendum doc(contact is null), wait for agent to sign before showing this button-->
+		    <aura:if isTrue="{!and(and(v.relationshipRecord.Signed__c == false, v.previewMode == false), or(v.relationshipRecord.Contact__c == null, and(v.relationshipRecord.Contact__c != null, v.relationshipRecord.Agent_Signed__c == true)))}">
+	    		<div class="center">
+				    <lightning:button class="experianViolet bold" name="Sign" label="Click to Agree (Contract Signer)" onclick="{!c.showAgreementModal}"/>
+				</div>
+		    </aura:if>
+
+		    <!--<lightning:button class="experianDarkBlue bold" name="Sign" label="test" onclick="{!c.testButton}"/>-->
+		    
+	    </div>
+	</div>
+
+</aura:component>

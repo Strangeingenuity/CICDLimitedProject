@@ -1,0 +1,64 @@
+<aura:component controller="CSDA_MembershipRequestTabCont" implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="allMemberships" type="Membership__c[]"/>
+	<aura:attribute name="selTabId" type="String"/>
+	<aura:attribute name="membershipStatus" type="String"/>
+	<aura:attribute name="questionnaireLink" type="String"/>
+	<!--aura:attribute name="permPurposeOptions" type="object[]"/-->
+	<aura:attribute name="curUserContact" type="Contact"/>
+	<aura:attribute name="ThirdPartyRoleList" type="List"/>
+	<aura:attribute name="StaticDocList" type="Document[]"/>
+
+	<!-- Proximity attributes-->
+	<aura:attribute name="jscProximity" type="String"/>
+	<aura:attribute name="hdimProximity" type="String"/>
+
+	<!-- Spinner attribute-->
+	<aura:attribute name="IsSpinner" type="Boolean" Default="false"/>
+
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+	<aura:handler name="GetProximityAttributes" event="c:CSDA_SubmitEvent" action="{!c.updateProximityAttributes}"/>
+	<!--
+	<lightning:button name="abc" label="test" class="button" onclick="{!c.testbutton}"/>
+	-->
+
+	<aura:if isTrue="{!v.IsSpinner}">
+		<lightning:spinner alternativeText="Loading..." variant="brand" size="large"/>
+	</aura:if>
+
+	<div id="formContainer">
+        <input type="hidden" id="tupni" aura:id="tupni"/> 
+        <input type="hidden" id="tupnimidh" aura:id="tupnimidh"/>
+<!--
+        <textarea type="hidden" id="tupni" aura:id="tupni"/><br/>
+        <textarea type="hidden" id="tupnimidh" aura:id="tupnimidh"/><br/>
+    -->
+    </div>
+
+    <!-- Display a tab for each membership related to this contact-->
+    <div>
+        <aura:if isTrue="{!v.allMemberships.length == 0}">
+            No Credentialing Requests.
+        </aura:if>
+        <lightning:tabset class="tabOpacity" aura:id="tabs" selectedTabId="{!v.selTabId}">
+            <aura:iteration items="{!v.allMemberships}" var="eachMembership">
+                <lightning:tab id="{!eachMembership.Id}" label="{!eachMembership.Name}">
+                    <aura:if isTrue="{!v.membershipStatus== 'Submitted'}">
+                        <c:CSDA_DocTabs thisMembership="{!eachMembership}"/>
+                        
+                        <aura:set attribute="else">
+                            <c:CSDA_MembershipRequestForm thisMembership= "{!eachMembership}"
+                                                          questionnaireLink="{!v.questionnaireLink}"
+                                                          curUserContact="{!v.curUserContact}"
+                                                          ThirdPartyRoleList="{!v.ThirdPartyRoleList}"
+                                                          StaticDocList="{!v.StaticDocList}"
+                                                          jscProximity="{!v.jscProximity}"
+                                                          hdimProximity="{!v.hdimProximity}"/>
+                        </aura:set>
+                    </aura:if>   
+                    
+                </lightning:tab>
+            </aura:iteration>
+        </lightning:tabset>
+	</div>
+    
+</aura:component>

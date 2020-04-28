@@ -1,0 +1,58 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="record" type="Membership_Address__c"/>
+	<aura:attribute name="rowIndex" type="String"/>
+
+	<!-- Combobox Options-->
+	<aura:attribute name="addressTypeOpts" Type="List" default="[
+		{'label': 'Branch', 'value':'Branch'},
+		{'label': 'Affiliate', 'value':'Affiliate'}
+		]"/>
+
+	<aura:registerEvent name="DeleteRowEvt" type="c:CSDA_DeleteDynamicRowEvent"/> 
+  	<tr>
+  		<aura:if isTrue="{!v.record.isNewRecord == true}">
+  			<aura:if isTrue="{!v.record.Type__c == 'Affiliate'}">
+  				<td><ui:inputText class="opacity" value="{!v.record.Account_Name__c}" placeholder="Enter Account" /></td>
+  				<aura:set attribute="else">
+  					<td><ui:outputText value="{!v.record.Account_Name__c}"/></td>
+  				</aura:set>
+  			</aura:if>
+	  		<td><ui:inputText value="{!v.record.Address_Line_1__c}"/></td>
+	  		<td><ui:inputText value="{!v.record.City__c}"/></td>
+	  		<td><ui:inputText class="opacity" value="{!v.record.Phone_Number__c}" placeholder="###-###-####"/></td>
+	  		<td><ui:inputText class="opacity" value="{!v.record.State__c}" placeholder="2 Digits Only"/></td>
+	  		<td><ui:inputText class="opacity" value="{!v.record.Zip__c}" placeholder="5 Digits Only"/></td>
+
+			<aura:set attribute="else">
+				<td><ui:outputText value="{!v.record.Account_Name__c}"/></td>
+				<td><ui:outputText value="{!v.record.Address_Line_1__c}"/></td>
+		  		<td><ui:outputText value="{!v.record.City__c}"/></td>
+		  		<td><ui:outputText value="{!v.record.Phone_Number__c}"/></td>
+		  		<td><ui:outputText value="{!v.record.State__c}"/></td>
+		  		<td><ui:outputText value="{!v.record.Zip__c}"/></td>
+			</aura:set>
+		</aura:if>
+		
+		<td>
+			<aura:if isTrue="{!and(v.record.isNewRecord == true, or(v.record.Type__c == 'Branch', v.record.Type__c == 'Affiliate'))}">
+				<!--
+				<ui:inputSelect value="{!v.record.Type__c}" change="{!c.onChange}">
+		          	<ui:inputSelectOption text="Branch" label="Branch"/>
+		          	<ui:inputSelectOption text="Affiliate" label="Affiliate"/>
+		        </ui:inputSelect>
+		    -->
+		        <lightning:combobox variant="label-hidden" options="{!v.addressTypeOpts}" value="{!v.record.Type__c}" onchange="{!c.onChange}"/>
+				<aura:set attribute="else">
+					<ui:outputText value="{!v.record.Type__c}"/>
+				</aura:set>
+			</aura:if>
+		</td>
+		<td>
+	      <a onclick="{!c.removeRow}">
+	        <lightning:icon variant="error" iconName="utility:delete" class="slds-icon slds-icon_small" size="small" alternativeText="icon"/>
+	        <span class="slds-assistive-text">Delete Icon</span>
+	      </a>
+      	</td> 
+ 	</tr>
+
+</aura:component>

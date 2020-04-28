@@ -1,0 +1,88 @@
+.THIS .table-border{
+	border-color: #D3D3D3 !important; 
+	border-width: 1px !important; 
+	border-style: solid !important;
+}
+
+.THIS .opacity{
+	background-color: rgba(255, 255, 255, 0.0) !important;
+}
+
+.THIS .header-label{
+	font-weight: bold;
+	font-style: italic;
+}
+
+.THIS .experianPurple{
+	background-color: #982881 !important;
+	color: #fff !important;
+}
+
+.THIS .experianLightBlue {
+	background-color: #406eb3 !important;
+	color: #fff !important;
+}
+
+.THIS .experianDarkBlue {
+	background-color: #26478d !important;
+	border-color: #1e315a !important;
+	color: #fff !important;
+}
+
+.THIS .experianViolet {
+	background-color: #632678 !important;
+	color: #fff !important;
+}
+
+.THIS .bold {
+	font-weight:bold;
+}
+
+.THIS .centerDiv {
+	position: absolute;
+	left: 50%;
+	margin-right: -50%;
+}
+
+.THIS .top2 {
+	position: absolute;
+	top: 1%;
+}
+
+.THIS .largeInputSelect {
+	height:280px;
+	word-wrap:break-word;
+	display:block;
+	white-space: pre-line;
+}
+
+.THIS .button {
+    display: block;
+    width: 115px;
+    height: 35px;
+    padding: 8px;
+    text-align: center;
+    border-width: 1px;
+    color: #26478d;
+    font-weight: bold;
+    border-color: #26478d;
+    border-style: dotted;
+    border-radius: 8px;
+	border: 1px solid black;
+}
+
+.THIS .upload {
+	width: 115px;
+    height: 35px;
+    background-color: #26478d;
+    font-size:14pt;
+}
+
+.THIS .EI3PA-subsection-question {
+	font-size: 13pt;
+}
+
+.THIS .myCheckbox {
+  	display: inline-block;
+  	float: left;
+}

@@ -1,0 +1,7 @@
+.THIS .outputLink {
+	font-weight: bold;
+}
+
+.THIS .outputLink:hover {
+	text-decoration: underline;
+}

@@ -1,0 +1,63 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="addressToAdd" type="Membership_Address__c"/>
+	<aura:attribute name="isSameBilling" type="String"/>"
+	<aura:attribute name="thisMembership" type="Membership__c"/>
+
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+	<aura:registerEvent name="AddAddressEvt" type="c:CSDA_AddRecordEvent"/> 
+	
+	<div style="height: 100%;">
+        <section class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-modal__close" title="Close" 
+                            onclick="{!c.closeMe}">
+                        <lightning:icon class="white slds-icon_small" iconName="utility:close"/> 
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                        Create Membership Address
+                    </h2>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium" style="padding-left:5%; padding-right:5%;"> 
+                	<div class="slds-grid slds-wrap">
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Address Line 1:" /> <br/>
+			                <ui:inputText required="true" value="{!v.addressToAdd.Address_Line_1__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Address Line 2:" /> <br/>
+			            	<ui:inputText value="{!v.addressToAdd.Address_Line_2__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="City:" /> <br/>
+			            	<ui:inputEmail value="{!v.addressToAdd.City__c}"/>
+			            </div>
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Phone Number:" /> <br/>
+			                <ui:inputText required="true" value="{!v.addressToAdd.Phone_Number__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="State:" /> <br/>
+			            	<ui:inputText value="{!v.addressToAdd.State__c}"/>
+			            </div>
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Zip:" /> <br/>
+			                <ui:inputText value="{!v.addressToAdd.Zip__c}"/>
+			            </div>
+			        </div>
+                </div>
+                
+                <footer class="slds-modal__footer"> 
+                    <lightning:button class="experianDarkBlue bold" type="submit" name="update" label="Save" onclick="{!c.save}"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+	
+</aura:component>

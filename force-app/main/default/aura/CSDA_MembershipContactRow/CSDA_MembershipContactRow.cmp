@@ -1,0 +1,115 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="record" type="Membership_Contacts__c"/>
+	<aura:attribute name="rowIndex" type="String"/>
+  <aura:attribute name="SQDSectionActive" type="Boolean"/>
+  <aura:attribute name="ThirdPartyRoleList" type="List"/>
+  <aura:attribute name="roleOptionList" type="List"/>
+
+  <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+  <aura:handler name="change" value="{!v.SQDSectionActive}" action="{!c.SQDChange}"/>
+
+	<aura:registerEvent name="DeleteRowEvt" type="c:CSDA_DeleteDynamicRowEvent"/> 
+    <tr>
+      <aura:if isTrue="{!v.record.isNewRecord == true}">
+        <td><ui:inputText value="{!v.record.First_Name__c}"/></td>
+        <td><ui:inputText value="{!v.record.Last_Name__c}"/></td>
+        <td>
+<!--
+          <ui:inputSelect value="{!v.record.Role__c}">
+            <ui:inputSelectOption text="Contract signer" label="Contract signer"/>
+            <ui:inputSelectOption text="Head Designate" label="Head Designate"/>
+            <ui:inputSelectOption text="Applicant" label="Applicant"/>
+            <ui:inputSelectOption text="Principal Contact" label="Principal Contact"/>
+            <aura:if isTrue="{!v.SQDSectionActive}">
+              <ui:inputSelectOption text="Data Processing" label="Data Processing"/>
+              <ui:inputSelectOption text="Credit" label="Credit"/>
+              <ui:inputSelectOption text="Metric Report" label="Metric Report"/>
+              <ui:inputSelectOption text="Responsible for sending data" label="Responsible for sending data"/>
+            </aura:if>
+          </ui:inputSelect>
+-->
+          <lightning:combobox variant="label-hidden" options="{!v.roleOptionList}" value="{!v.record.Role__c}"/>
+        </td>
+        
+        <td><ui:inputEmail value="{!v.record.Email__c}"/></td>
+        <td><ui:inputPhone class="opacity" value="{!v.record.Phone_Number__c}" placeholder="###-###-####"/></td>
+        <td><ui:inputText value="{!v.record.Address__c}"/></td>
+        <td><ui:inputText value="{!v.record.City__c}"/></td>
+        <td><ui:inputText class="opacity" value="{!v.record.State__c}" placeholder="2 Digits Only"/></td>
+        <td><ui:inputText class="opacity" value="{!v.record.Zip__c}" placeholder="5 Digits Only"/></td>
+        <td><ui:inputCheckbox value="{!v.record.Is_Third_Party__c}"/></td>
+
+        <aura:set attribute="else">
+          <td><ui:outputText value="{!v.record.First_Name__c}"/></td>
+          <td><ui:outputText value="{!v.record.Last_Name__c}"/></td>
+          <td><ui:outputText value="{!v.record.Role__c}"/></td>
+          <td><ui:outputText value="{!v.record.Email__c}"/></td>
+          <td><ui:outputText value="{!v.record.Phone_Number__c}"/></td>
+          <td><ui:outputText value="{!v.record.Address__c}"/></td>
+          <td><ui:outputText value="{!v.record.City__c}"/></td>
+          <td><ui:outputText value="{!v.record.State__c}"/></td>
+          <td><ui:outputText value="{!v.record.Zip__c}"/></td>
+          <td><ui:outputCheckbox value="{!v.record.Is_Third_Party__c}"/></td>
+        </aura:set>
+        
+      </aura:if>
+      <td>
+        <a onclick="{!c.removeRow}">
+          <lightning:icon variant="error" iconName="utility:delete" class="slds-icon slds-icon_small" size="small" alternativeText="icon"/>
+          <span class="slds-assistive-text">Delete Icon</span>
+        </a>
+      </td> 
+   	</tr>
+
+    <!-- Second row for Third Party Contacts only-->
+    <aura:if isTrue="{!v.record.Is_Third_Party__c}">
+      <tr style="background-color:#DCDCDC;">
+        <aura:if isTrue="{!v.record.isNewRecord == true}">
+          <td>
+            <ui:outputText class="header-label" value="Account Name"/><br/>
+            <ui:inputText value="{!v.record.Third_Party_Account__c}"/>
+          </td>
+          <td>
+            <ui:outputText class="header-label" value="Web Address"/><br/>
+            <ui:inputText value="{!v.record.Third_Party_Web_Address__c}"/>
+          </td>
+          <td>
+            <ui:outputText class="header-label" value="Third Party Role"/><br/>
+            <!--
+            <ui:inputSelect aura:id="thirdPartyRoleInput" value="{!v.record.Third_Party_Role__c}">
+              <aura:iteration items="{!v.ThirdPartyRoleList}" var="eachRole">
+                <ui:inputSelectOption text="{!eachRole}" label="{!eachRole}"/>
+              </aura:iteration>
+            </ui:inputSelect>-->
+            <lightning:combobox class="myComboBox" variant="label-hidden" options="{!v.ThirdPartyRoleList}" value="{!v.record.Third_Party_Role__c}" />
+          </td>
+
+          <aura:set attribute="else">
+            <td>
+              <ui:outputText class="header-label" value="Account Name"/><br/>
+              <ui:outputText value="{!v.record.Third_Party_Account__c}"/>
+            </td>
+            <td>
+              <ui:outputText class="header-label" value="Web Address"/><br/>
+              <ui:outputText value="{!v.record.Third_Party_Web_Address__c}"/>
+            </td>
+            <!--<td><ui:outputText value="{!v.record.Role_Transaction__c}"/></td>-->
+            <td>
+              <ui:outputText class="header-label" value="Third Party Role"/><br/>
+              <ui:outputText value="{!v.record.Third_Party_Role__c}"/>
+            </td>
+          </aura:set>
+        </aura:if>
+
+        <!-- Fill out rest of row with empty columns-->
+        <td/>
+        <td/>
+        <td/>
+        <td/>
+        <td/>
+        <td/>
+        <td/>
+        <td/>
+      </tr>
+    </aura:if>
+</aura:component>

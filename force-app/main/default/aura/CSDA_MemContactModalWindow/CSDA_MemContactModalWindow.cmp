@@ -1,0 +1,114 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global">
+	<!--
+	<aura:attribute name="curUserContact" type="Contact"/>
+	<aura:attribute name="contactList" type="Membership_Contacts__c[]"/>
+-->
+	<aura:attribute name="contactToAdd" type="Membership_Contacts__c"/>
+	<aura:attribute name="membershipID" type="String"/>
+	<aura:attribute name="contactRole" type="String"/>
+	<aura:attribute name="isThirdParty" type="Boolean" Default="false"/>
+	<aura:attribute name="ThirdPartyRoleList" type="List"/>
+	<aura:attribute name="applicantContact" type="Membership_Contacts__c"/>
+
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+	<aura:registerEvent name="AddContactEvt" type="c:CSDA_AddRecordEvent"/> 
+	
+	<div style="height: 100%;">
+        <section class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-modal__close" title="Close" 
+                            onclick="{!c.closeMe}">
+                        <lightning:icon class="white slds-icon_small" iconName="utility:close"/> 
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">
+                        Create Membership Contact
+                    </h2>
+                </header>
+
+                <div class="slds-modal__content slds-p-around_medium" style="padding-left:5%; padding-right:5%;"> 
+                	<div class="slds-grid slds-wrap">
+                		<div class="slds-col slds-size_1-of-1 roleText">
+			            	<ui:outputText value="Role" /> :
+			                <ui:outputText value="{!v.contactRole}"/><br/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="First Name" /> :
+			                <ui:inputText required="true" value="{!v.contactToAdd.First_Name__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Last Name" /> :
+			            	<ui:inputText value="{!v.contactToAdd.Last_Name__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Email" /> :
+			            	<ui:inputEmail value="{!v.contactToAdd.Email__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Phone" /> :
+			                <ui:inputText required="true" value="{!v.contactToAdd.Phone_Number__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Street" /> :
+			                <ui:inputText value="{!v.contactToAdd.Address__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="City" /> :
+			            	<ui:inputText value="{!v.contactToAdd.City__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="State" /> :
+			                <ui:inputText value="{!v.contactToAdd.State__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Zip" /> :
+			            	<ui:inputText value="{!v.contactToAdd.Zip__c}"/>
+			            </div>
+
+			            <div class="slds-col slds-size_1-of-1">
+			            	<ui:outputText class="header-label" value="Is Third Party?" /> :
+			                <ui:inputCheckbox value="{!v.contactToAdd.Is_Third_Party__c}"/>
+			            </div>
+
+			            <aura:if isTrue="{!v.contactToAdd.Is_Third_Party__c}">
+			            	<div class="slds-col slds-size_1-of-1">
+				            	<ui:outputText class="header-label" value="Account Name" /> :
+				            	<ui:inputText value="{!v.contactToAdd.Third_Party_Account__c}"/>
+				            </div>
+				            <div class="slds-col slds-size_1-of-1">
+				            	<ui:outputText class="header-label" value="Web Address" /> :
+				            	<ui:inputText value="{!v.contactToAdd.Third_Party_Web_Address__c}"/>
+				            </div>
+				            <div class="slds-col slds-size_1-of-1">
+				            	<ui:outputText value="Third Party Role"/><br/>
+				            	<lightning:combobox variant="label-hidden" options="{!v.ThirdPartyRoleList}" value="{!v.contactToAdd.Third_Party_Role__c}" />
+				            </div>
+			            </aura:if>
+			        </div>
+
+			        <aura:if isTrue="{!v.contactRole == 'Head Designate'}">
+			        	<br/>
+		                <b>Head Designate Certificate:</b> This form is to be used by Experian to identify the individual that will act on behalf of the Client in regards to end user access to Experian’s systems. Client’s Head Security Designate will submit all requests to create, change or lock Client employee end user access to accounts and permissions associated with Experian’s systems and information via the Internet. The Head Security Designate must be an authorized representative of the Client’s organization and must be available to interact with Experian on information and product access matters in accordance with the attached Access Security Requirement for FCRA and GLB 5A Data. Such requirements may be updated from time to time by Experian in accordance with the terms therein. This Head Designate Authorization Form must be signed by a duly authorized representative of the Client. The Client acknowledges and agrees that Client 1) has received the Access Security Requirement for FCRA and GLB 5A Data, 2) has read and understands the Clients’ obligations described in the Access Security Requirement for FCRA and GLB 5A Data, 3) will communicate the contents of the Access Security Requirement for FCRA and GLB 5A Data and any subsequent updates thereto to all employee end users that shall have access to Experian’s systems and information via the Internet, and 4) will abide to the provisions of the Access Security Requirement for FCRA and GLB 5A Data. Changes in Head Security Designate status (e.g., transfer or termination) are to be reported to Experian immediately. On an annual basis Experian will require the Head Security Designate to attest to the accuracy and currency of the status of the employee end users that access accounts and permissions to Experian’s systems and information via the Internet.  Attestation must be completed within 30 days of notification to Client, or the Head Security Designate will be prohibited from accessing Experian’s systems and information until such attestation is complete.
+		                <br/><br/>
+		            </aura:if>
+                </div>
+                
+                <footer class="slds-modal__footer"> 
+                    <lightning:button class="experianDarkBlue bold" type="submit" name="update" label="Save" onclick="{!c.save}"/>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </div>
+
+	
+</aura:component>

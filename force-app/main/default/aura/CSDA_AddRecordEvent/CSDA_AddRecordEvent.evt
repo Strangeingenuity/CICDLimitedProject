@@ -1,0 +1,3 @@
+<aura:event type="COMPONENT" description="Event to Add Records" >
+    <aura:attribute name="record" type="sObject" />
+</aura:event>

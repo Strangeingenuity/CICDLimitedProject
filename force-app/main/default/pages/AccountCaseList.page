@@ -1,0 +1,174 @@
+<!--
+/**=====================================================================
+  * Experian
+  * Name: ContactCaseList
+  * Description: Visualforce page to display related cases list
+  *              that can be filtered for Account object.
+  * Created Date: March 08 2017
+  * Created By: Ryan (Weijie) Hu, UCInnovation
+  *
+  * Date Modified        Modified By                  Description of the update
+  * April 11th 2017      Ryan (Weijie) Hu             Open URLs in new tabs
+  * April 26th 2017      Ryan (Weijie) Hu             Translateion by custom labels created
+  * May   18th 2017      Ryan (Weijie) Hu             Add button for creating new case. and check console before all opening links
+  * May   25th 2017      Ryan (Weijie) Hu             Change opening links in new subtab, 'create case' still opens in new main tab
+  =====================================================================*/
+-->
+<apex:page showHeader="true" sidebar="true" standardController="Account" extensions="RelatedCaseListController">
+
+  <apex:includeScript value="/support/console/39.0/integration.js"/>
+
+  <script type="text/javascript">
+
+    var newCaseUrl = '{!URLFOR($Action.Case.NewCase, Account.Id, [retURL=URLFOR($Action.Account.View, Account.Id)])}';
+    var otherUrl;
+    var isNewCase = false;
+    
+    // function openingPrimaryTab(result) {
+    //   if (isNewCase) {
+    //     sforce.console.openPrimaryTab(result.id, newCaseUrl, true, 'New Case');
+    //   }
+    //   else {
+    //     sforce.console.openPrimaryTab(result.id, otherUrl, true);
+    //   }
+      
+    // }
+
+    function openSubtab(result) {
+      var primaryTabId = result.id;
+
+      if (isNewCase) {
+        sforce.console.openSubtab(primaryTabId, newCaseUrl, true, 'New Case', null);
+      }
+      else {
+        sforce.console.openSubtab(primaryTabId, otherUrl, true, '', null);
+      }
+    }
+
+    function getIdAndOpenPrimaryTab() {
+      // sforce.console.getEnclosingPrimaryTabId(openingPrimaryTab);
+      sforce.console.getEnclosingPrimaryTabId(openSubtab);  
+    }
+    
+    function createNewCase() {
+      isNewCase = true;
+      if (sforce.console.isInConsole())
+      {
+        sforce.console.openPrimaryTab(null, newCaseUrl, true, 'New Case');
+      }
+      else
+      {
+        window.open(newCaseUrl, "_top");
+      }
+    }
+
+    function openUrlLink(url) {
+      isNewCase = false;
+      otherUrl = url;
+      if (sforce.console.isInConsole())
+      {
+        getIdAndOpenPrimaryTab();
+      }
+      else
+      {
+        window.open(otherUrl, "_top");
+      }
+    }
+    
+  </script>
+
+  <style>
+    .filterOption {
+      margin-right: 16px;
+      margin-bottom: 8px;
+    }
+    .newAndFilterButton {
+      display: inline-block;
+      width: 120px;
+      margin-bottom: 8px !important;
+      padding: 4px 3px;
+    }
+  </style>
+
+  <apex:outputpanel >
+    <apex:actionstatus id="entryStatus">
+      <apex:facet name="start">
+        <div class="waitingSearchDiv" id="el_loading" style="background-color: #fbfbfb; height: 100%;opacity:0.75;width:100%;"> 
+          <div class="waitingHolder" style="top: 49%; width: 91px;">
+              <img class="waitingImage" src="/img/loading.gif" title="Please Wait..." />
+              <span class="waitingDescription">Please Wait...</span>
+          </div>
+        </div>
+      </apex:facet>
+    </apex:actionstatus>
+  </apex:outputpanel>
+
+  <apex:form >
+    <apex:outputLabel value="{!$Label.Related_Case_List_Filter_Page_CaseStatus}" for="caseStatusList" styleClass="filterOption"/> <!-- translation needed -->
+    <apex:selectList id="caseStatusList" value="{!selectedStatus}" multiselect="false" size="1" styleClass="filterOption">
+      <apex:selectOptions value="{!caseStatus}"/>
+    </apex:selectList>
+
+    <apex:outputLabel value="{!$Label.Related_Case_List_Filter_Page_ReasonSerasa}" for="caseReasonList" styleClass="filterOption"/> <!-- translation needed -->
+    <apex:selectList id="caseReasonList" value="{!selectedReason}" multiselect="false" size="1" styleClass="filterOption">
+      <apex:selectOptions value="{!caseReasons}"/>
+    </apex:selectList>
+
+    <apex:outputLabel value="{!$Label.Related_Case_List_Filter_Page_SecReasonSerasa}" for="caseSecReasonList" styleClass="filterOption"/> <!-- translation needed -->
+    <apex:selectList id="caseSecReasonList" value="{!selectedSecondaryReason}" multiselect="false" size="1" styleClass="filterOption">
+      <apex:selectOptions value="{!caseSecondaryReasons}"/>
+    </apex:selectList>
+
+    <div class="serasa-rclc-actions">
+      <apex:commandButton action="{!updateFilterCaseList}" value="{!$Label.Related_Case_List_Filter_Page_Filter_Button}" id="filterButton" styleClass="newAndFilterButton" reRender="needRefresh" status="entryStatus"/> <!-- translation needed -->
+      <button class="newAndFilterButton" onclick="createNewCase(); return false;">New Case</button>
+    </div>
+
+    <apex:pageBlock id="needRefresh">
+
+      <apex:outputPanel rendered="{!filteredCaseList.size > 0}">
+        <apex:pageBlockTable value="{!filteredCaseList}" var="case">
+          <apex:column headerValue="{!$Label.Related_Case_List_Filter_Page_Case}" > <!-- translation needed -->
+            <apex:outputLink onclick="openUrlLink('/{!case.id}'); return false;">
+              <apex:outputText value="{!case.CaseNumber}"/>
+            </apex:outputLink>
+          </apex:column>
+          <apex:column value="{!case.CreatedDate}"/>
+          <apex:column headerValue="{!$Label.Related_Case_List_Filter_Page_Case_Owner}"> <!-- translation needed -->
+            <apex:outputLink onclick="openUrlLink('/{!case.OwnerId}'); return false;">
+              <apex:outputText value="{!case.Owner.Name}"/>
+            </apex:outputLink>
+          </apex:column>
+          <apex:column value="{!case.Status}"/>
+          <apex:column value="{!case.Subject}"/>
+          <apex:column value="{!case.Type}"/>
+          <apex:column value="{!case.Serasa_Case_Reason__c}"/> <!-- object field translation needed -->
+          <apex:column value="{!case.Serasa_Secondary_Case_Reason__c}"/> <!-- object field translation needed -->
+          <apex:column value="{!case.Priority}"/>
+          <apex:column value="{!case.RecordTypeId}"/>
+          <apex:column headerValue="{!$Label.Related_Case_List_Filter_Page_Contact_Name}"> <!-- translation needed -->
+            <apex:outputLink onclick="openUrlLink('/{!case.ContactId}'); return false;">
+              <apex:outputText value="{!case.Contact.Name}"/>
+            </apex:outputLink>
+          </apex:column>
+        </apex:pageBlockTable>
+
+        <br/>
+        <apex:outputPanel >
+          <div style="text-align:center">
+            <apex:commandButton value="|<" action="{!setCon.first}" reRender="needRefresh" disabled="{!!setCon.hasPrevious}" title="Beginning" status="entryStatus" style="text-transform: capitalize;"/>
+            <apex:commandButton value="<{!$Label.Related_Case_List_Filter_Page_Previous_Button}" action="{!setCon.previous}" reRender="needRefresh" disabled="{!!setCon.hasPrevious}" title="{!$Label.Related_Case_List_Filter_Page_Previous_Button}" status="entryStatus" style="text-transform: capitalize;"/>
+           
+            <apex:commandButton value="{!$Label.Related_Case_List_Filter_Page_Next_Button}>" action="{!setCon.next}" reRender="needRefresh" disabled="{!!setCon.hasNext}" title="{!$Label.Related_Case_List_Filter_Page_Next_Button}" status="entryStatus" style="text-transform: capitalize;"/>
+            <apex:commandButton value=">|" action="{!setCon.last}" reRender="needRefresh" disabled="{!!setCon.hasNext}" title="End" status="entryStatus" style="text-transform: capitalize;"/>               
+          </div>
+        </apex:outputPanel>
+      </apex:outputPanel>
+
+      <apex:outputPanel rendered="{!filteredCaseList.size == 0}">
+        <apex:outputText value="No case record found"/>
+      </apex:outputPanel>
+
+    </apex:pageBlock>
+  </apex:form>
+</apex:page>

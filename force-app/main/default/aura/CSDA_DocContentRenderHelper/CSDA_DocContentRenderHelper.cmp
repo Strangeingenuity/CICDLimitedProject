@@ -1,0 +1,13 @@
+<aura:component implements="forceCommunity:availableForAllPageTypes" access="global">
+	<aura:attribute name="contentToRender" type="object"/>
+	<!--aura:attribute name="numOfCheckboxes" type="Integer"/-->
+	<aura:attribute name="trueFalseArray" type="String[]"/>
+	<aura:attribute name="multiTrueFalseArray" type="String[]"/>
+
+	<!-- Handlers-->
+	<aura:handler name="init" value="{!this}" action="{!c.doInit}"/>
+
+	<div class="contractText">
+    	{!v.body}
+    </div>
+</aura:component>
